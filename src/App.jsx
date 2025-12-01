@@ -3,6 +3,7 @@ import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRES = [
+  "All",
   "Action",
   "RPG",
   "Adventure",
@@ -12,47 +13,59 @@ const GENRES = [
 ];
 
 export default function App() {
-  const [selectedGenre, setSelectedGenre] = useState("RPG");
+  const [selectedGenre, setSelectedGenre] = useState("All");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function loadGames() {
       setLoading(true);
+      const results = [];
 
-      try {
-        // Top50 게임 ID 가져오기
-        const appids = await fetchTopGamesByGenre(selectedGenre, 50);
-
-        // 병렬 처리로 게임 정보와 평점 가져오기
-        const results = await Promise.all(
-          appids.map(async (appid) => {
-            const info = await fetchGameDetail(appid);
-            if (!info) return null; // info 없으면 건너뛰기
-
-            const spy = await fetchSpy(appid);
-            const rating = spy.positive / (spy.positive + spy.negative);
-
-            return {
-              appid,
-              name: info.name,
-              image: info.header_image,
-              rating,
-            };
-          })
-        );
-
-        // null 제거 후 평점 내림차순 정렬
-        setGames(results.filter(Boolean).sort((a, b) => b.rating - a.rating));
-      } catch (err) {
-        console.error("Error loading games:", err);
-      } finally {
-        setLoading(false);
+      // 장르별 Top50 게임 ID 가져오기
+      let appids;
+      if (selectedGenre === "All") {
+        // "All"이면 장르 필터 없이 Action 기준 Top50 가져오기
+        appids = await fetchTopGamesByGenre("Action", 50);
+      } else {
+        appids = await fetchTopGamesByGenre(selectedGenre, 50);
       }
+
+      for (const appid of appids) {
+        const info = await fetchGameDetail(appid);
+        if (!info) continue;
+
+        // 장르 필터링: All이면 건너뜀
+        if (
+          selectedGenre !== "All" &&
+          !info.genres?.some((g) => g.description === selectedGenre)
+        )
+          continue;
+
+        const spy = await fetchSpy(appid);
+        const rating = spy.positive / (spy.positive + spy.negative);
+
+        results.push({
+          appid,
+          name: info.name,
+          image: info.header_image,
+          rating,
+        });
+      }
+
+      results.sort((a, b) => b.rating - a.rating);
+      setGames(results);
+      setLoading(false);
     }
 
     loadGames();
   }, [selectedGenre]);
+
+  // 검색어 기반 필터링
+  const filteredGames = games.filter((game) =>
+    game.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -60,7 +73,7 @@ export default function App() {
         🎮 Steam Top Rated Games
       </h1>
 
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-4 gap-4">
         <select
           className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600"
           value={selectedGenre}
@@ -70,17 +83,23 @@ export default function App() {
             <option key={g}>{g}</option>
           ))}
         </select>
+
+        <input
+          type="text"
+          placeholder="Search games..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 w-64"
+        />
       </div>
 
       {loading ? (
         <p className="text-center text-lg">Loading games...</p>
-      ) : games.length === 0 ? (
-        <p className="text-center text-gray-400">
-          No games found for this genre.
-        </p>
+      ) : filteredGames.length === 0 ? (
+        <p className="text-center text-gray-400">No games found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {games.map((game) => (
+          {filteredGames.map((game) => (
             <GameCard key={game.appid} game={game} />
           ))}
         </div>
