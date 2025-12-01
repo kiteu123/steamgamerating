@@ -14,7 +14,7 @@ const GENRES = [
 const BATCH_SIZE = 20; // 한 번에 불러오는 게임 수
 
 export default function App() {
-  const [selectedGenre, setSelectedGenre] = useState("RPG");
+  const [selectedGenre, setSelectedGenre] = useState("All");
   const [games, setGames] = useState([]);
   const [allAppIds, setAllAppIds] = useState([]);
   const [loading, setLoading] = useState(false);
