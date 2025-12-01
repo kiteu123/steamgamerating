@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
@@ -10,22 +10,42 @@ const GENRES = [
   "Indie",
   "Simulation",
 ];
+const BATCH_SIZE = 20; // 한 번에 불러오는 게임 수
 
 export default function App() {
   const [selectedGenre, setSelectedGenre] = useState("RPG");
   const [games, setGames] = useState([]);
+  const [allAppIds, setAllAppIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
 
+  const containerRef = useRef(null);
+
+  // 장르 선택 시 전체 appid 목록 가져오기
+  useEffect(() => {
+    async function loadAppIds() {
+      setLoading(true);
+      const appids = await fetchTopGamesByGenre(selectedGenre, 100); // 최대 100개
+      setAllAppIds(appids);
+      setGames([]);
+      setPage(0);
+      setLoading(false);
+    }
+
+    loadAppIds();
+  }, [selectedGenre]);
+
+  // 페이지 변경 시 게임 정보 로드
   useEffect(() => {
     async function loadGames() {
+      if (page * BATCH_SIZE >= allAppIds.length) return;
       setLoading(true);
+
       const results = [];
+      const batch = allAppIds.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
 
-      // 선택한 장르 Top30 게임 ID 가져오기 (Top50 → Top30으로 축소)
-      const appids = await fetchTopGamesByGenre(selectedGenre, 30);
-
-      for (const appid of appids) {
+      for (const appid of batch) {
         const info = await fetchGameDetail(appid);
         if (!info) continue;
 
@@ -40,21 +60,43 @@ export default function App() {
         });
       }
 
-      results.sort((a, b) => b.rating - a.rating);
-      setGames(results);
+      setGames((prev) => [...prev, ...results]);
       setLoading(false);
     }
 
     loadGames();
-  }, [selectedGenre]);
+  }, [page, allAppIds]);
 
-  // 검색어 기반 필터링
+  // 무한 스크롤 이벤트
+  useEffect(() => {
+    function handleScroll() {
+      if (!containerRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
+        setPage((prev) => prev + 1);
+      }
+    }
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) container.removeEventListener("scroll", handleScroll);
+    };
+  }, [loading]);
+
   const filteredGames = games.filter((game) =>
     game.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div
+      ref={containerRef}
+      className="p-6 max-w-5xl mx-auto h-[90vh] overflow-y-auto"
+    >
       <h1 className="text-3xl font-bold mb-6 text-center">
         🎮 Steam Top Rated Games
       </h1>
@@ -79,17 +121,17 @@ export default function App() {
         />
       </div>
 
-      {loading ? (
-        <p className="text-center text-lg">Loading games...</p>
-      ) : filteredGames.length === 0 ? (
+      {filteredGames.length === 0 && !loading && (
         <p className="text-center text-gray-400">No games found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filteredGames.map((game) => (
-            <GameCard key={game.appid} game={game} />
-          ))}
-        </div>
       )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {filteredGames.map((game) => (
+          <GameCard key={game.appid} game={game} />
+        ))}
+      </div>
+
+      {loading && <p className="text-center mt-4">Loading more games...</p>}
     </div>
   );
 }
