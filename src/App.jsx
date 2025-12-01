@@ -3,7 +3,6 @@ import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRES = [
-  "All",
   "Action",
   "RPG",
   "Adventure",
@@ -13,7 +12,7 @@ const GENRES = [
 ];
 
 export default function App() {
-  const [selectedGenre, setSelectedGenre] = useState("All");
+  const [selectedGenre, setSelectedGenre] = useState("RPG");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -23,25 +22,12 @@ export default function App() {
       setLoading(true);
       const results = [];
 
-      // 장르별 Top50 게임 ID 가져오기
-      let appids;
-      if (selectedGenre === "All") {
-        // "All"이면 장르 필터 없이 Action 기준 Top50 가져오기
-        appids = await fetchTopGamesByGenre("Action", 50);
-      } else {
-        appids = await fetchTopGamesByGenre(selectedGenre, 50);
-      }
+      // 선택한 장르 Top30 게임 ID 가져오기 (Top50 → Top30으로 축소)
+      const appids = await fetchTopGamesByGenre(selectedGenre, 30);
 
       for (const appid of appids) {
         const info = await fetchGameDetail(appid);
         if (!info) continue;
-
-        // 장르 필터링: All이면 건너뜀
-        if (
-          selectedGenre !== "All" &&
-          !info.genres?.some((g) => g.description === selectedGenre)
-        )
-          continue;
 
         const spy = await fetchSpy(appid);
         const rating = spy.positive / (spy.positive + spy.negative);
