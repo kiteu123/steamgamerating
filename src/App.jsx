@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import GameCard from "./components/GameCard";
-import { fetchGameDetail, fetchTopGamesByGenre } from "./api/steam";
+import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRES = [
   "Action",
@@ -19,19 +19,17 @@ export default function App() {
   useEffect(() => {
     async function loadGames() {
       setLoading(true);
-      const appids = await fetchTopGamesByGenre(selectedGenre);
       const results = [];
+
+      // Top50 게임 ID 가져오기
+      const appids = await fetchTopGamesByGenre(selectedGenre, 50);
 
       for (const appid of appids) {
         const info = await fetchGameDetail(appid);
         if (!info) continue;
-        // 장르 필터: SteamStore API에서 해당 장르 포함 여부 확인
-        if (!info.genres?.some((g) => g.description === selectedGenre))
-          continue;
 
-        const rating = info.metacritic?.score
-          ? info.metacritic.score / 100
-          : 0.5; // 메타크리틱 점수가 없으면 기본 50%
+        const spy = await fetchSpy(appid);
+        const rating = spy.positive / (spy.positive + spy.negative);
 
         results.push({
           appid,

@@ -1,16 +1,29 @@
 // Steam Store API (이미지/설명)
 export async function fetchGameDetail(appid) {
-  const res = await fetch(`/api/steamstore?appid=${appid}`);
-  if (!res.ok) return null;
+  const res = await fetch(
+    `http://localhost:3001/api/steamstore?appid=${appid}`
+  );
   const data = await res.json();
-  return data[appid]?.data || null;
+  return data[appid].data;
 }
 
-// SteamSpy Top100 또는 장르별 AppID 가져오기
-export async function fetchTopGamesByGenre(genre) {
-  const res = await fetch(`/api/steamspy?request=genre&genre=${genre}`);
-  if (!res.ok) return [];
+// SteamSpy proxy (CORS 문제 해결)
+export async function fetchSpy(appid) {
+  const res = await fetch(
+    `http://localhost:3001/api/steamspy?request=appdetails&appid=${appid}`
+  );
   const data = await res.json();
-  // SteamSpy API는 { appid: {...} } 구조 반환
-  return Object.keys(data).map((appid) => parseInt(appid));
+  return data;
+}
+
+// 특정 장르 Top 게임 ID 가져오기
+export async function fetchTopGamesByGenre(genre, limit = 50) {
+  const res = await fetch(`/api/steamspy?request=genre&genre=${genre}`);
+  const data = await res.json();
+
+  // appid만 배열로 추출 후 limit까지 자르기
+  const appids = Object.keys(data)
+    .slice(0, limit)
+    .map((id) => parseInt(id));
+  return appids;
 }

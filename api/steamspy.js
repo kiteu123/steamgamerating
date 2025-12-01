@@ -1,10 +1,8 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  const { request, genre } = req.query;
-
-  let url = `https://steamspy.com/api.php?request=${request}`;
-  if (genre) url += `&genre=${genre}`;
+  const qs = new URLSearchParams(req.query).toString();
+  const url = `https://steamspy.com/api.php?${qs}`;
 
   try {
     const response = await fetch(url, {
