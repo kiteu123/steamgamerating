@@ -19,29 +19,36 @@ export default function App() {
   useEffect(() => {
     async function loadGames() {
       setLoading(true);
-      const results = [];
 
-      // Top50 게임 ID 가져오기
-      const appids = await fetchTopGamesByGenre(selectedGenre, 50);
+      try {
+        // Top50 게임 ID 가져오기
+        const appids = await fetchTopGamesByGenre(selectedGenre, 50);
 
-      for (const appid of appids) {
-        const info = await fetchGameDetail(appid);
-        if (!info) continue;
+        // 병렬 처리로 게임 정보와 평점 가져오기
+        const results = await Promise.all(
+          appids.map(async (appid) => {
+            const info = await fetchGameDetail(appid);
+            if (!info) return null; // info 없으면 건너뛰기
 
-        const spy = await fetchSpy(appid);
-        const rating = spy.positive / (spy.positive + spy.negative);
+            const spy = await fetchSpy(appid);
+            const rating = spy.positive / (spy.positive + spy.negative);
 
-        results.push({
-          appid,
-          name: info.name,
-          image: info.header_image,
-          rating,
-        });
+            return {
+              appid,
+              name: info.name,
+              image: info.header_image,
+              rating,
+            };
+          })
+        );
+
+        // null 제거 후 평점 내림차순 정렬
+        setGames(results.filter(Boolean).sort((a, b) => b.rating - a.rating));
+      } catch (err) {
+        console.error("Error loading games:", err);
+      } finally {
+        setLoading(false);
       }
-
-      results.sort((a, b) => b.rating - a.rating);
-      setGames(results);
-      setLoading(false);
     }
 
     loadGames();
