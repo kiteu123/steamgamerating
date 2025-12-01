@@ -6,10 +6,11 @@ export async function fetchGameDetail(appid) {
   return data[appid]?.data || null;
 }
 
-// SteamSpy proxy (CORS 문제 해결)
-export async function fetchSpy(appid) {
-  const res = await fetch(`/api/steamspy?request=appdetails&appid=${appid}`);
-  if (!res.ok) return null;
+// SteamSpy Top100 또는 장르별 AppID 가져오기
+export async function fetchTopGamesByGenre(genre) {
+  const res = await fetch(`/api/steamspy?request=genre&genre=${genre}`);
+  if (!res.ok) return [];
   const data = await res.json();
-  return data;
+  // SteamSpy API는 { appid: {...} } 구조 반환
+  return Object.keys(data).map((appid) => parseInt(appid));
 }
