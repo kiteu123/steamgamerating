@@ -38,38 +38,58 @@ export default function App() {
     loadAppIds();
   }, [selectedGenre]);
 
-  // 페이지별 게임 상세정보 로드
+  // 페이지별 게임 상세정보 로드 (최소 BATCH_SIZE 확보)
   useEffect(() => {
     async function loadGames() {
       if (page * BATCH_SIZE >= allAppIds.length) return;
       setLoading(true);
 
-      const batch = allAppIds.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
+      const results = [];
+      let index = page * BATCH_SIZE;
 
-      const results = await Promise.all(
-        batch.map(async (appid) => {
-          try {
-            const info = await fetchGameDetail(appid);
-            if (!info) return null;
+      while (results.length < BATCH_SIZE && index < allAppIds.length) {
+        const batch = allAppIds.slice(
+          index,
+          index + (BATCH_SIZE - results.length)
+        );
 
-            const spy = await fetchSpy(appid);
-            if (!spy || !spy.positive) return null;
+        const batchResults = await Promise.all(
+          batch.map(async (appid) => {
+            try {
+              const info = (await fetchGameDetail(appid)) || {
+                name: "Unknown",
+                header_image: "",
+                appid,
+              };
+              const spy = (await fetchSpy(appid)) || {
+                positive: 0,
+                negative: 0,
+              };
+              const rating =
+                spy.positive + spy.negative > 0
+                  ? spy.positive / (spy.positive + spy.negative)
+                  : 0;
 
-            return {
-              appid,
-              name: info.name,
-              image: info.header_image,
-              rating: spy.positive / (spy.positive + spy.negative),
-            };
-          } catch {
-            return null;
-          }
-        })
-      );
+              return {
+                appid,
+                name: info.name,
+                image: info.header_image,
+                rating,
+              };
+            } catch {
+              return null;
+            }
+          })
+        );
 
-      setGames((prev) => [...prev, ...results.filter(Boolean)]);
+        results.push(...batchResults.filter(Boolean));
+        index += batch.length;
+      }
+
+      setGames((prev) => [...prev, ...results]);
       setLoading(false);
     }
+
     loadGames();
   }, [page, allAppIds]);
 
