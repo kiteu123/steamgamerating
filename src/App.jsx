@@ -3,7 +3,7 @@ import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRE_MAP = {
-  All: "all",
+  All: "", // SteamSpy는 "all" 지원 안 함, 빈 문자열로 처리
   Action: "action",
   RPG: "role-playing",
   Adventure: "adventure",
@@ -28,65 +28,62 @@ export default function App() {
   useEffect(() => {
     async function loadAppIds() {
       setLoading(true);
-      const genreParam = GENRE_MAP[selectedGenre] || "all";
-      const appids = await fetchTopGamesByGenre(genreParam, 100);
+      const genreParam = GENRE_MAP[selectedGenre] || "";
+
+      let appids = [];
+      if (!genreParam) {
+        // "All" 장르일 때, 인기 앱 ID 직접 가져오기 (SteamSpy에서 지원 안함)
+        const popularGames = [570, 730, 440, 578080, 238960]; // 예시: Dota2, CS:GO, TF2, PUBG, Path of Exile
+        appids = popularGames;
+      } else {
+        appids = await fetchTopGamesByGenre(genreParam, 100);
+      }
+
       setAllAppIds(appids);
       setGames([]);
       setPage(0);
       setLoading(false);
     }
+
     loadAppIds();
   }, [selectedGenre]);
 
-  // 페이지별 게임 상세정보 로드 (최소 BATCH_SIZE 확보)
+  // 페이지별 게임 상세정보 로드
   useEffect(() => {
     async function loadGames() {
-      if (page * BATCH_SIZE >= allAppIds.length) return;
+      if (page * BATCH_SIZE >= allAppIds.length || allAppIds.length === 0)
+        return;
       setLoading(true);
 
-      const results = [];
-      let index = page * BATCH_SIZE;
+      const batch = allAppIds.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
 
-      while (results.length < BATCH_SIZE && index < allAppIds.length) {
-        const batch = allAppIds.slice(
-          index,
-          index + (BATCH_SIZE - results.length)
-        );
+      const results = await Promise.all(
+        batch.map(async (appid) => {
+          try {
+            const info = await fetchGameDetail(appid);
+            if (!info) return null;
 
-        const batchResults = await Promise.all(
-          batch.map(async (appid) => {
-            try {
-              const info = (await fetchGameDetail(appid)) || {
-                name: "Unknown",
-                header_image: "",
-                appid,
-              };
-              const spy = (await fetchSpy(appid)) || {
-                positive: 0,
-                negative: 0,
-              };
-              const rating =
-                spy.positive + spy.negative > 0
-                  ? spy.positive / (spy.positive + spy.negative)
-                  : 0;
+            const spy = await fetchSpy(appid);
+            if (!spy) return null;
 
-              return {
-                appid,
-                name: info.name,
-                image: info.header_image,
-                rating,
-              };
-            } catch {
-              return null;
-            }
-          })
-        );
+            const positive = Number(spy.positive || 0);
+            const negative = Number(spy.negative || 0);
+            const rating =
+              positive + negative > 0 ? positive / (positive + negative) : 0;
 
-        results.push(...batchResults.filter(Boolean));
-        index += batch.length;
-      }
+            return {
+              appid,
+              name: info.name,
+              image: info.header_image,
+              rating,
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
 
-      setGames((prev) => [...prev, ...results]);
+      setGames((prev) => [...prev, ...results.filter(Boolean)]);
       setLoading(false);
     }
 
