@@ -110,7 +110,7 @@ export default function App() {
           value={selectedGenre}
           onChange={(e) => setSelectedGenre(e.target.value)}
         >
-          {GENRES.map((g) => (
+          {Object.keys(GENRE_MAP).map((g) => (
             <option key={g}>{g}</option>
           ))}
         </select>
