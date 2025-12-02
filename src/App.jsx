@@ -102,11 +102,13 @@ export default function App() {
   return (
     <div
       ref={containerRef}
-      className="p-6 max-w-5xl mx-auto h-[90vh] overflow-y-auto"
+      // ✨ 스크롤바 커스텀 클래스 추가 (아래 CSS에서 정의할 것)
+      className="p-6 max-w-5xl mx-auto h-[90vh] overflow-y-auto custom-scrollbar"
     >
       <h1 className="text-3xl font-bold mb-6 text-center">🎮 RAWG Top Games</h1>
 
-      <div className="flex justify-center mb-4 gap-4">
+      {/* ✨ 로딩 메시지 위치 변경을 위해 flex 컨테이너 수정 */}
+      <div className="flex justify-center items-center mb-4 gap-4">
         <select
           className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600"
           value={selectedGenre}
@@ -124,6 +126,9 @@ export default function App() {
           onChange={(e) => setSearch(e.target.value)}
           className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 w-64"
         />
+
+        {/* ✨ 로딩 메시지를 검색창 옆으로 이동 */}
+        {loading && <p className="text-blue-400 font-medium">Loading...</p>}
       </div>
 
       {games.length === 0 && !loading && (
@@ -136,9 +141,10 @@ export default function App() {
         ))}
       </div>
 
-      {loading && <p className="text-center mt-4">Loading more games...</p>}
+      {/* 이전에 하단에 있던 로딩 메시지는 위로 이동했으므로 제거 */}
+      {/* {loading && <p className="text-center mt-4">Loading more games...</p>} */}
 
-      {/* 데이터 끝을 알리는 메시지 */}
+      {/* 데이터 끝을 알리는 메시지 유지 */}
       {!loading && games.length > 0 && !hasMore && (
         <p className="text-center text-gray-500 mt-4">End of results.</p>
       )}
