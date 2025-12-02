@@ -2,15 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
-const GENRES = [
-  "All",
-  "Action",
-  "RPG",
-  "Adventure",
-  "Strategy",
-  "Indie",
-  "Simulation",
-];
+const GENRE_MAP = {
+  All: "",
+  Action: "action",
+  RPG: "role-playing",
+  Adventure: "adventure",
+  Strategy: "strategy",
+  Indie: "indie",
+  Simulation: "simulation",
+};
 const BATCH_SIZE = 20; // 한 번에 불러오는 게임 수
 
 export default function App() {
@@ -27,12 +27,9 @@ export default function App() {
   useEffect(() => {
     async function loadAppIds() {
       let appids = [];
-      if (selectedGenre === "All") {
-        // 모든 장르 게임 가져오기
-        appids = await fetchTopGamesByGenre(100); // 빈 문자열이나 API가 모든 게임을 반환하도록 처리
-      } else {
-        appids = await fetchTopGamesByGenre(selectedGenre, 100);
-      }
+      const genreParam = GENRE_MAP[selectedGenre];
+      appids = await fetchTopGamesByGenre(genreParam, 100);
+
       setAllAppIds(appids);
       setGames([]);
       setPage(0);
