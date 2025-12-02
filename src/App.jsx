@@ -3,7 +3,7 @@ import GameCard from "./components/GameCard";
 import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRE_MAP = {
-  All: "", // SteamSpy는 "all" 지원 안 함, 빈 문자열로 처리
+  All: "all",
   Action: "action",
   RPG: "role-playing",
   Adventure: "adventure",
@@ -24,37 +24,25 @@ export default function App() {
 
   const containerRef = useRef(null);
 
-  // 장르 선택 시 전체 appid 가져오기
+  // 장르 선택 시 앱 ID 불러오기
   useEffect(() => {
     async function loadAppIds() {
       setLoading(true);
-      const genreParam = GENRE_MAP[selectedGenre] || "";
-
-      let appids = [];
-      if (!genreParam) {
-        // "All" 장르일 때, 인기 앱 ID 직접 가져오기 (SteamSpy에서 지원 안함)
-        const popularGames = [570, 730, 440, 578080, 238960]; // 예시: Dota2, CS:GO, TF2, PUBG, Path of Exile
-        appids = popularGames;
-      } else {
-        appids = await fetchTopGamesByGenre(genreParam, 100);
-      }
-
+      const genreParam = GENRE_MAP[selectedGenre];
+      const appids = await fetchTopGamesByGenre(genreParam, 100);
       setAllAppIds(appids);
       setGames([]);
       setPage(0);
       setLoading(false);
     }
-
     loadAppIds();
   }, [selectedGenre]);
 
-  // 페이지별 게임 상세정보 로드
+  // 페이지별 게임 상세정보 불러오기
   useEffect(() => {
     async function loadGames() {
-      if (page * BATCH_SIZE >= allAppIds.length || allAppIds.length === 0)
-        return;
+      if (page * BATCH_SIZE >= allAppIds.length) return;
       setLoading(true);
-
       const batch = allAppIds.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
 
       const results = await Promise.all(
@@ -62,20 +50,14 @@ export default function App() {
           try {
             const info = await fetchGameDetail(appid);
             if (!info) return null;
-
             const spy = await fetchSpy(appid);
-            if (!spy) return null;
-
-            const positive = Number(spy.positive || 0);
-            const negative = Number(spy.negative || 0);
-            const rating =
-              positive + negative > 0 ? positive / (positive + negative) : 0;
+            if (!spy || !spy.positive) return null;
 
             return {
               appid,
               name: info.name,
               image: info.header_image,
-              rating,
+              rating: spy.positive / (spy.positive + spy.negative),
             };
           } catch {
             return null;
@@ -86,7 +68,6 @@ export default function App() {
       setGames((prev) => [...prev, ...results.filter(Boolean)]);
       setLoading(false);
     }
-
     loadGames();
   }, [page, allAppIds]);
 
