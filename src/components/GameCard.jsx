@@ -18,14 +18,12 @@ export default function GameCard({ game }) {
       <p className="text-sm text-gray-400">
         Rating: {(game.rating * 100).toFixed(1)}%
       </p>
-      <a
-        href={steamLink}
-        target="_blank" // 새 탭에서 열기
-        rel="noopener noreferrer" // 보안 강화를 위해 추가
-        className="mt-3 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-lg text-sm font-semibold block text-center"
+      <button
+        onClick={() => window.open(steamLink, "_blank", "noopener,noreferrer")}
+        className="mt-3 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-lg text-sm font-semibold"
       >
         View on Steam
-      </a>
+      </button>
     </div>
   );
 }
