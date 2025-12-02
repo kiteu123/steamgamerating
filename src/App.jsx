@@ -1,3 +1,5 @@
+// App.jsx (App.js 또는 pages/index.jsx)
+
 import { useState, useEffect, useRef } from "react";
 import GameCard from "./components/GameCard";
 import { fetchGamesByGenre, searchGames } from "./api/rawg";
@@ -19,30 +21,47 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  // ✨ 무한 스크롤 제어를 위한 상태 추가
+  const [hasMore, setHasMore] = useState(true);
 
   const containerRef = useRef(null);
 
   const loadGames = async (reset = false) => {
+    // 다음 페이지가 없으면 로드 중지
+    if (!reset && !hasMore) return;
+
     setLoading(true);
-    let results = [];
-    if (search) {
-      results = await searchGames(search, page, PAGE_SIZE);
-    } else if (selectedGenre === "All") {
-      results = await fetchGamesByGenre("", page, PAGE_SIZE);
-    } else {
-      results = await fetchGamesByGenre(
-        selectedGenre.toLowerCase(),
-        page,
-        PAGE_SIZE
-      );
+    let data = { results: [], hasNext: false }; // API 응답 객체 초기화
+
+    try {
+      if (search) {
+        data = await searchGames(search, page, PAGE_SIZE);
+      } else if (selectedGenre === "All") {
+        data = await fetchGamesByGenre("", page, PAGE_SIZE);
+      } else {
+        data = await fetchGamesByGenre(
+          selectedGenre.toLowerCase(),
+          page,
+          PAGE_SIZE
+        );
+      }
+
+      // ✨ data.results (배열)만 사용하여 게임 상태 업데이트
+      setGames((prev) => (reset ? data.results : [...prev, ...data.results]));
+      // ✨ 다음 페이지 존재 여부 업데이트
+      setHasMore(data.hasNext);
+    } catch (error) {
+      console.error("데이터 로드 중 오류 발생:", error);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
     }
-    setGames((prev) => (reset ? results : [...prev, ...results]));
-    setLoading(false);
   };
 
   // 장르/검색 변경 시 초기화
   useEffect(() => {
     setPage(1);
+    setHasMore(true); // 새 검색/장르 시 무조건 true로 초기화
     loadGames(true);
   }, [selectedGenre, search]);
 
@@ -57,14 +76,21 @@ export default function App() {
     const handleScroll = () => {
       if (!containerRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-      if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
+
+      // ✨ hasMore 조건 추가: 다음 페이지가 있고, 스크롤이 끝에 도달했고, 로딩 중이 아닐 때만 페이지 증가
+      if (
+        scrollTop + clientHeight >= scrollHeight - 50 &&
+        !loading &&
+        hasMore
+      ) {
         setPage((prev) => prev + 1);
       }
     };
+
     const container = containerRef.current;
     container?.addEventListener("scroll", handleScroll);
     return () => container?.removeEventListener("scroll", handleScroll);
-  }, [loading]);
+  }, [loading, hasMore]); // ✨ 의존성 배열에 hasMore 추가
 
   return (
     <div
@@ -104,6 +130,11 @@ export default function App() {
       </div>
 
       {loading && <p className="text-center mt-4">Loading more games...</p>}
+
+      {/* 데이터 끝을 알리는 메시지 */}
+      {!loading && games.length > 0 && !hasMore && (
+        <p className="text-center text-gray-500 mt-4">End of results.</p>
+      )}
     </div>
   );
 }

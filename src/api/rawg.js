@@ -1,5 +1,8 @@
-const API_KEY = "116d4dbb0177491cb07efccecbce3a7b"; // .env.local에 저장
+// src/api/rawg.js
 
+const API_KEY = "116d4dbb0177491cb07efccecbce3a7b";
+
+// 공통 API 호출 로직
 async function fetchRawgApi(url) {
   try {
     const res = await fetch(url);
@@ -8,9 +11,10 @@ async function fetchRawgApi(url) {
     }
     const data = await res.json();
 
-    // 무한 스크롤 제어를 위해 hasNext를 반환한다고 가정
+    // 무한 스크롤 제어를 위해 hasNext를 반환
     const hasNext = !!data.next;
 
+    // 클라이언트에게 필요한 데이터 가공
     const results = data.results.map((game) => ({
       id: game.id,
       name: game.name,
@@ -18,18 +22,20 @@ async function fetchRawgApi(url) {
       rating: game.rating,
     }));
 
+    // { results: Array, hasNext: Boolean } 형태로 통일하여 반환
     return { results, hasNext };
   } catch (err) {
     console.error("RAWG API error:", err);
+    // 오류 시에도 일관된 형태로 반환
     return { results: [], hasNext: false };
   }
 }
 
+// 장르별 게임 목록 호출 (All 장르 처리 포함)
 export async function fetchGamesByGenre(genre = "", page = 1, pageSize = 20) {
-  // 1. 기본 URL 설정: 장르 필터 없이 시작합니다.
+  // 장르가 ""일 경우 (All) 장르 쿼리 파라미터를 추가하지 않습니다.
   let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${page}&page_size=${pageSize}`;
 
-  // 2. 장르(genre)가 빈 문자열이 아닐 때만 &genres= 파라미터를 추가합니다.
   if (genre) {
     url += `&genres=${genre}`;
   }
@@ -37,6 +43,7 @@ export async function fetchGamesByGenre(genre = "", page = 1, pageSize = 20) {
   return fetchRawgApi(url);
 }
 
+// 검색 결과 호출
 export async function searchGames(query = "", page = 1, pageSize = 20) {
   const url = `https://api.rawg.io/api/games?key=${API_KEY}&search=${encodeURIComponent(
     query
