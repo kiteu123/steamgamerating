@@ -102,7 +102,7 @@ export default function App() {
   return (
     // ⭐️ 1. 최상위 컨테이너는 이제 스크롤을 담당하지 않고 전체 너비만 설정
     <div className="p-6 max-w-5xl mx-auto h-[100vh] overflow-x-hidden">
-      <h1 className="text-3xl font-bold mb-6 text-center">🎮 RAWG Top Games</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">🎮 Game List</h1>
 
       {/* ⭐️ 2. 검색/로딩바 영역 (스크롤 되지 않는 고정 영역) */}
       <div className="flex justify-center items-center mb-6 gap-4">
