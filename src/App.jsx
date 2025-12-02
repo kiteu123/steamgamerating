@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import GameCard from "../components/GameCard";
-import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "../lib/steam";
+import GameCard from "./components/GameCard";
+import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
 
 const GENRE_MAP = {
   All: "all",
