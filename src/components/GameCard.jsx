@@ -1,11 +1,17 @@
 export default function GameCard({ game }) {
-  const steamStore = game.stores.find(
+  // game.stores가 null/undefined일 경우 오류 방지
+  const steamStore = game.stores?.find(
     (store) => store.store.slug.toLowerCase() === "steam"
   );
 
-  const steamLink = steamStore
-    ? steamStore.url
-    : "https://store.steampowered.com";
+  // ⭐️ steamStore.url이 유효하고 빈 문자열이 아닌 경우에만 사용합니다.
+  const steamLink =
+    steamStore?.url && steamStore.url.trim() !== ""
+      ? steamStore.url // 유효한 URL
+      : "https://store.steampowered.com"; // 유효하지 않으면 기본 URL
+
+  // ✨ 콘솔 출력 추가: 어떤 링크가 최종적으로 사용되는지 확인
+  console.log(`[${game.name}] Final Steam Link:`, steamLink);
 
   return (
     <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:scale-[1.02] transition p-3">
