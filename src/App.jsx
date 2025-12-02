@@ -29,7 +29,7 @@ export default function App() {
       let appids = [];
       if (selectedGenre === "All") {
         // 모든 장르 게임 가져오기
-        appids = await fetchTopGamesByGenre("", 100); // 빈 문자열이나 API가 모든 게임을 반환하도록 처리
+        appids = await fetchTopGamesByGenre(100); // 빈 문자열이나 API가 모든 게임을 반환하도록 처리
       } else {
         appids = await fetchTopGamesByGenre(selectedGenre, 100);
       }

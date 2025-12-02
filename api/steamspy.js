@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   const qs = new URLSearchParams(req.query).toString();
   const url = `https://steamspy.com/api.php?${qs}`;
