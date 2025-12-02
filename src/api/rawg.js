@@ -20,6 +20,7 @@ async function fetchRawgApi(url) {
       name: game.name,
       image: game.background_image,
       rating: game.rating,
+      stores: game.stores || [],
     }));
 
     // { results: Array, hasNext: Boolean } 형태로 통일하여 반환
