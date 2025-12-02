@@ -100,15 +100,12 @@ export default function App() {
   }, [loading, hasMore]); // ✨ 의존성 배열에 hasMore 추가
 
   return (
-    <div
-      ref={containerRef}
-      // ✨ 스크롤바 커스텀 클래스 추가 (아래 CSS에서 정의할 것)
-      className="p-6 max-w-5xl mx-auto h-[90vh] overflow-y-auto custom-scrollbar"
-    >
+    // ⭐️ 1. 최상위 컨테이너는 이제 스크롤을 담당하지 않고 전체 너비만 설정
+    <div className="p-6 max-w-5xl mx-auto h-[100vh]">
       <h1 className="text-3xl font-bold mb-6 text-center">🎮 RAWG Top Games</h1>
 
-      {/* ✨ 로딩 메시지 위치 변경을 위해 flex 컨테이너 수정 */}
-      <div className="flex justify-center items-center mb-4 gap-4">
+      {/* ⭐️ 2. 검색/로딩바 영역 (스크롤 되지 않는 고정 영역) */}
+      <div className="flex justify-center items-center mb-6 gap-4">
         <select
           className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600"
           value={selectedGenre}
@@ -127,27 +124,31 @@ export default function App() {
           className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 w-64"
         />
 
-        {/* ✨ 로딩 메시지를 검색창 옆으로 이동 */}
         {loading && <p className="text-blue-400 font-medium">Loading...</p>}
       </div>
 
-      {games.length === 0 && !loading && (
-        <p className="text-center text-gray-400">No games found.</p>
-      )}
+      {/* ⭐️ 3. 게임 목록 영역 (스크롤 컨테이너) */}
+      <div
+        ref={containerRef}
+        // ✨ 남은 높이를 채우도록 h-[calc(100vh-A)] 사용
+        // (A는 상단 헤더와 필터의 높이를 대략 계산한 값, h-[80vh]는 안전한 임시값)
+        className="h-[80vh] overflow-y-auto custom-scrollbar"
+      >
+        {games.length === 0 && !loading && (
+          <p className="text-center text-gray-400">No games found.</p>
+        )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {games.map((game) => (
-          <GameCard key={game.id} game={game} />
-        ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {games.map((game) => (
+            <GameCard key={game.id} game={game} />
+          ))}
+        </div>
+
+        {/* 데이터 끝을 알리는 메시지 */}
+        {!loading && games.length > 0 && !hasMore && (
+          <p className="text-center text-gray-500 mt-4">End of results.</p>
+        )}
       </div>
-
-      {/* 이전에 하단에 있던 로딩 메시지는 위로 이동했으므로 제거 */}
-      {/* {loading && <p className="text-center mt-4">Loading more games...</p>} */}
-
-      {/* 데이터 끝을 알리는 메시지 유지 */}
-      {!loading && games.length > 0 && !hasMore && (
-        <p className="text-center text-gray-500 mt-4">End of results.</p>
-      )}
     </div>
   );
 }
