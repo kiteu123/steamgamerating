@@ -14,7 +14,7 @@ const GENRES = [
 const PAGE_SIZE = 20;
 
 export default function App() {
-  const [selectedGenre, setSelectedGenre] = useState("RPG");
+  const [selectedGenre, setSelectedGenre] = useState("All");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
