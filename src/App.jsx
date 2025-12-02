@@ -33,17 +33,24 @@ export default function App() {
     setLoading(true);
     let data = { results: [], hasNext: false }; // API 응답 객체 초기화
 
+    // 🎯 RPG 장르 슬러그 변환 로직 추가 (수정된 부분)
+    let genreSlug = selectedGenre;
+    if (selectedGenre === "RPG") {
+      genreSlug = "role-playing-games";
+    } else if (selectedGenre !== "All") {
+      genreSlug = selectedGenre.toLowerCase();
+    } else {
+      // "All"일 때는 빈 문자열 그대로 사용
+      genreSlug = "";
+    }
+    // ---------------------------------------------
+
     try {
       if (search) {
         data = await searchGames(search, page, PAGE_SIZE);
-      } else if (selectedGenre === "All") {
-        data = await fetchGamesByGenre("", page, PAGE_SIZE);
       } else {
-        data = await fetchGamesByGenre(
-          selectedGenre.toLowerCase(),
-          page,
-          PAGE_SIZE
-        );
+        // ✨ 변환된 genreSlug를 API 함수에 전달
+        data = await fetchGamesByGenre(genreSlug, page, PAGE_SIZE);
       }
 
       // ✨ data.results (배열)만 사용하여 게임 상태 업데이트
