@@ -12,6 +12,7 @@ export default function GameCard({ game }) {
 
   // ✨ 콘솔 출력 추가: 어떤 링크가 최종적으로 사용되는지 확인
   console.log(`[${game.name}] Final Steam Link:`, steamLink);
+  console.log(`[${game.name}] Stores Data:`, game.stores);
 
   return (
     <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:scale-[1.02] transition p-3">
