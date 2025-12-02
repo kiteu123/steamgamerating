@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import GameCard from "./components/GameCard";
-import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "./api/steam";
+import GameCard from "../components/GameCard";
+import { fetchGameDetail, fetchSpy, fetchTopGamesByGenre } from "../lib/steam";
 
 const GENRE_MAP = {
-  All: "",
+  All: "all",
   Action: "action",
   RPG: "role-playing",
   Adventure: "adventure",
@@ -11,7 +11,8 @@ const GENRE_MAP = {
   Indie: "indie",
   Simulation: "simulation",
 };
-const BATCH_SIZE = 20; // 한 번에 불러오는 게임 수
+
+const BATCH_SIZE = 20;
 
 export default function App() {
   const [selectedGenre, setSelectedGenre] = useState("All");
@@ -23,76 +24,71 @@ export default function App() {
 
   const containerRef = useRef(null);
 
-  // 장르 선택 시 전체 appid 목록 가져오기
+  // 장르 선택 시 전체 appid 가져오기
   useEffect(() => {
     async function loadAppIds() {
-      let appids = [];
-      const genreParam = GENRE_MAP[selectedGenre];
-      appids = await fetchTopGamesByGenre(genreParam, 100);
-
+      setLoading(true);
+      const genreParam = GENRE_MAP[selectedGenre] || "all";
+      const appids = await fetchTopGamesByGenre(genreParam, 100);
       setAllAppIds(appids);
       setGames([]);
       setPage(0);
       setLoading(false);
     }
-
     loadAppIds();
   }, [selectedGenre]);
 
-  // 페이지 변경 시 게임 정보 로드
+  // 페이지별 게임 상세정보 로드
   useEffect(() => {
     async function loadGames() {
       if (page * BATCH_SIZE >= allAppIds.length) return;
       setLoading(true);
 
-      const results = [];
       const batch = allAppIds.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
 
-      for (const appid of batch) {
-        const info = await fetchGameDetail(appid);
-        if (!info) continue;
+      const results = await Promise.all(
+        batch.map(async (appid) => {
+          try {
+            const info = await fetchGameDetail(appid);
+            if (!info) return null;
 
-        const spy = await fetchSpy(appid);
-        const rating = spy.positive / (spy.positive + spy.negative);
+            const spy = await fetchSpy(appid);
+            if (!spy || !spy.positive) return null;
 
-        results.push({
-          appid,
-          name: info.name,
-          image: info.header_image,
-          rating,
-        });
-      }
+            return {
+              appid,
+              name: info.name,
+              image: info.header_image,
+              rating: spy.positive / (spy.positive + spy.negative),
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
 
-      setGames((prev) => [...prev, ...results]);
+      setGames((prev) => [...prev, ...results.filter(Boolean)]);
       setLoading(false);
     }
-
     loadGames();
   }, [page, allAppIds]);
 
-  // 무한 스크롤 이벤트
+  // 무한 스크롤
   useEffect(() => {
-    function handleScroll() {
+    const handleScroll = () => {
       if (!containerRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-
       if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
         setPage((prev) => prev + 1);
       }
-    }
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (container) container.removeEventListener("scroll", handleScroll);
     };
+    const container = containerRef.current;
+    if (container) container.addEventListener("scroll", handleScroll);
+    return () => container?.removeEventListener("scroll", handleScroll);
   }, [loading]);
 
-  const filteredGames = games.filter((game) =>
-    game.name.toLowerCase().includes(search.toLowerCase())
+  const filteredGames = games.filter((g) =>
+    g.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -111,7 +107,9 @@ export default function App() {
           onChange={(e) => setSelectedGenre(e.target.value)}
         >
           {Object.keys(GENRE_MAP).map((g) => (
-            <option key={g}>{g}</option>
+            <option key={g} value={g}>
+              {g}
+            </option>
           ))}
         </select>
 
