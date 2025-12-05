@@ -1,0 +1,171 @@
+.intro-container {
+  position: fixed;
+  inset: 0;
+  background: #0c0000;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* 총알 구멍 — 작은 흰 점 + 어두운 주변 */
+.bullet {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+
+  /* 중심은 매우 어두운 점 */
+  background: radial-gradient(
+    circle,
+    rgb(255, 255, 255) 0%,
+    rgba(255, 255, 255, 0.9) 20%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.15) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+
+  /* 다중 그림자로 퍼지는 느낌 강화 */
+  box-shadow: 0 0 10px 4px rgba(255, 255, 255, 0.6),
+    0 0 25px 10px rgba(255, 255, 255, 0.3),
+    0 0 40px 20px rgba(255, 255, 255, 0.15);
+
+  animation: bulletHit 0.2s ease-out forwards;
+}
+
+@keyframes bulletHit {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 총알 위치 3개 */
+.bullet1 {
+  top: 70%;
+  left: 28%;
+}
+.bullet2 {
+  top: 45%;
+  left: 75%;
+}
+.bullet3 {
+  top: 20%;
+  left: 46%;
+}
+
+/* 균열 이미지 (PNG 사용 가능) */
+.crack {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: translate(-51%, -48%);
+  animation: crackShow 0.3s ease-out forwards;
+}
+
+@keyframes crackShow {
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%), scale(1.1);
+  }
+}
+
+/* 균열 위치 3개 — bullet 위치와 거의 동일하게 배치 */
+.crack1 {
+  top: 70%;
+  left: 28%;
+  background-image: url("/images/crack.png");
+}
+.crack2 {
+  top: 45%;
+  left: 75%;
+  background-image: url("/images/crack.png");
+}
+.crack3 {
+  top: 20%;
+  left: 46%;
+  background-image: url("/images/crack.png");
+}
+
+.loading-letters {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 42px;
+  color: rgb(255, 255, 255);
+  display: flex;
+  gap: 2px;
+  font-family: "Arial Black", sans-serif;
+  letter-spacing: 2px;
+}
+
+.loading-letters .letter {
+  opacity: 0;
+  transform: translate(var(--start-x), var(--start-y)) scale(0.4);
+  animation: letterFly 0.9s ease-out forwards;
+}
+
+@keyframes letterFly {
+  0% {
+    opacity: 0;
+    transform: translate(var(--start-x), var(--start-y)) scale(0.4);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(6px, -6px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.shake {
+  animation: screenShake 0.1s ease-in-out;
+}
+
+@keyframes screenShake {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate(
+        calc(-10px * var(--shake-power)),
+        calc(6px * var(--shake-power))
+      )
+      rotate(calc(-1deg * var(--shake-power)));
+  }
+  40% {
+    transform: translate(
+        calc(8px * var(--shake-power)),
+        calc(-8px * var(--shake-power))
+      )
+      rotate(calc(1deg * var(--shake-power)));
+  }
+  60% {
+    transform: translate(
+        calc(-6px * var(--shake-power)),
+        calc(4px * var(--shake-power))
+      )
+      rotate(calc(-0.8deg * var(--shake-power)));
+  }
+  80% {
+    transform: translate(
+        calc(4px * var(--shake-power)),
+        calc(-4px * var(--shake-power))
+      )
+      rotate(calc(0.6deg * var(--shake-power)));
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
