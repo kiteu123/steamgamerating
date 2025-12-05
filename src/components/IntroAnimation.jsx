@@ -24,9 +24,9 @@ export default function IntroAnimation({ onFinish }) {
       // stage 1 (300ms)
       setTimeout(() => setStage(1), 300),
       setTimeout(() => setStage(2), 1500),
-      setTimeout(() => setStage(3), 2500),
-      setTimeout(() => setStage(4), 3500),
-      setTimeout(() => onFinish(), 4500),
+      setTimeout(() => setStage(3), 2000),
+      setTimeout(() => setStage(4), 2500),
+      setTimeout(() => onFinish(), 3500),
     ];
 
     return () => timers.forEach(clearTimeout);
@@ -35,8 +35,8 @@ export default function IntroAnimation({ onFinish }) {
   useEffect(() => {
     const shakeTimers = [
       setTimeout(() => triggerShake(1.1), 1500),
-      setTimeout(() => triggerShake(1.3), 2500),
-      setTimeout(() => triggerShake(1.5), 3500),
+      setTimeout(() => triggerShake(1.3), 2000),
+      setTimeout(() => triggerShake(1.5), 2500),
     ];
 
     return () => shakeTimers.forEach(clearTimeout);
